@@ -11,46 +11,70 @@
 	#$t3 temp register used for destination of subtraction
 #output registers
 	#$v1 set to 1 if there is an Overflow
-	#ra the final number
+	#$vo the final number
+	
 
 convert_hex_str:
+	li $v0,0
+	li $v1,0
+	li $t5,0 #counter for the number of numbers
 #load the string from $a0 to temp register
 #shift left tell tell you get a non-zero
 
 
-lb		$t1 , 0($a0)  #loads in the byte to t1
-beq		$t1,$0,convert_hex_str #branch to beginning if leading zero
+lbu		$t1 , 0($a0)  #loads in the byte to t1
+li		$t2,48
+addi $a0,$a0,1  #increments the pointer
+beq		$t1,$t2,convert_hex_str #branch to beginning if leading zero, comparring to 48 which is 0 in ascii
+beq		$t1,$0,end #branch to end when reaches 0, this will catch an empty string
+
+
+
+convertStart:
 
 
 #0-9 integer
 li		$t2,48
 sub		$t3,$t1,$t2  #subtract 48
 li		$t2,9  #loads 9
-bgt		$t0,$t2,uppercase	
+bgt		$t3,$t2,uppercase	
 j		addto	
 
 uppercase:
 #uppercase
 li		 $t2,7
-sub		  $t3,$t1,$t2  #subtract 7
+sub		  $t3,$t3,$t2  #subtract 7
 li		$t2,15  #loads 15
-bgt		$t0,$t2,lowercase	
+bgt		$t3,$t2,lowercase	
 j		addto	
 
 
 lowercase:
 #lowercase
 li		 $t2,32
-sub		  $t3,$t1,$t2  #subtract 32
+sub		 $t3,$t3,$t2  #subtract 32
 j		addto	
 
 addto:
-##
+sll		$v0,$v0,4		#shift left
+add		$v0,$v0,$t3#adds the number to output register $v0
+lbu		$t1 , 0($a0)  #loads in the byte to t1
+addi	$a0,$a0,1  #increments the pointer
+addi	$t5,$t5,1 #increments the counter for cycles
 
+beq		$t1,$0,end #branch to end when reaches 0/null terminator
+j		convertStart #jump back to the beginning 
 
 
 error:
-	addi $v0,$0,1
+	li $v1,1		#sets the designated error flag
+j endFinal
+
+end:
+li		$t2,8  #loads 9
+bgt		$t5,$t2,error
+endFinal:
+jr $ra#the end
 
 
 
